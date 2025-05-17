@@ -13,6 +13,20 @@ class BookFilter(django_filters.FilterSet):
         field_name="cover", choices=Book.CoverChoices.choices
     )
 
+    daily_fee_min = django_filters.NumberFilter(
+        field_name="daily_fee", lookup_expr="gte"
+    )
+    daily_fee_max = django_filters.NumberFilter(
+        field_name="daily_fee", lookup_expr="lte"
+    )
+
+    inventory_min = django_filters.NumberFilter(
+        field_name="inventory", lookup_expr="gte"
+    )
+    inventory_max = django_filters.NumberFilter(
+        field_name="inventory", lookup_expr="lte"
+    )
+
     class Meta:
         model = Book
         fields = ["title", "author", "cover"]
