@@ -45,6 +45,7 @@ INSTALLED_APPS = [
     "books",
     "django_filters",
     "user",
+    "borrowings",
 ]
 
 MIDDLEWARE = [
