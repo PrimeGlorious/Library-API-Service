@@ -40,9 +40,19 @@ urlpatterns = [
         "api/doc/redoc/",
         SpectacularRedocView.as_view(url_name="schema"),
         name="redoc",
+        "api/doc/redoc/", SpectacularRedocView.as_view(url_name="schema"), name="redoc"
     ),
-]
+    path(
+        "api/user/",
+        include("user.urls",
+                namespace="user")
+    ),
+    path(
+        "api-auth/",
+        include("rest_framework.urls",
+                namespace="rest_framework")),
 
+]
 
 if settings.DEBUG:
     urlpatterns += static(
