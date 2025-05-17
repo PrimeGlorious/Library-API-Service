@@ -26,6 +26,8 @@ class BorrowingsViewSet(
     queryset = Borrowing.objects.all().order_by("-borrow_date")
     permission_classes = (IsAuthenticated,)
 
+    filter_backends = [DjangoFilterBackend, OrderingFilter]
+
     def retrieve(self, request, *args, **kwargs):
         instance = self.get_object()
         if instance.user != request.user:
@@ -35,10 +37,18 @@ class BorrowingsViewSet(
     def perform_create(self, serializer):
         serializer.save(user=self.request.user)
 
+
     def get_queryset(self):
         queryset = self.queryset.filter(
             user=self.request.user,
         )
+
+        is_active = self.request.query_params.get("is_active", None)
+        if is_active:
+            queryset = queryset.filter(
+                id__in=[obj.id for obj in queryset if obj.is_active() == is_active]
+            )
+
         return queryset
 
     def get_serializer_class(self):

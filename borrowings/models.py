@@ -20,7 +20,7 @@ class Borrowing(models.Model):
     actual_return_date = models.DateField(null=True, blank=True)
 
     def is_active(self):
-        return self.actual_return_date is None
+        return "true" if self.actual_return_date is None else "false"
 
     def __str__(self):
         return self.book.title
