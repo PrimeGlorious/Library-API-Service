@@ -19,3 +19,29 @@ def borrowing_created(sender, instance, created, **kwargs):
             f"User ID: {user.id}"
         )
         send_telegram_message.delay(user.telegram_chat_id, text)
+
+
+@receiver(post_save, sender=Book)
+def book_created_or_updated(sender, instance, created, **kwargs):
+    if created:
+        text = (
+            f"📚 New Book Added:\n"
+            f"Title: {instance.title}\n"
+            f"Author: {instance.author}\n"
+            f"Cover: {instance.cover}\n"
+            f"Inventory: {instance.inventory}\n"
+            f"Daily Fee: ${instance.daily_fee}"
+        )
+    else:
+        text = (
+            f"✏️ Book Updated:\n"
+            f"Title: {instance.title}\n"
+            f"Author: {instance.author}\n"
+            f"Cover: {instance.cover}\n"
+            f"Inventory: {instance.inventory}\n"
+            f"Daily Fee: ${instance.daily_fee}"
+        )
+
+    from django.contrib.auth.models import User
+    for user in User.objects.exclude(telegram_chat_id__isnull=True):
+        send_telegram_message.delay(user.telegram_chat_id, text)
