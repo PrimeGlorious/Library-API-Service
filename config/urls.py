@@ -34,12 +34,11 @@ urlpatterns = [
         include("rest_framework.urls",
                 namespace="rest_framework")),
     # APPS
-    path("api/books/", include("books.urls")),
-    path("api/borrowings/", include("borrowings.urls")),
+    path("api/library/", include("books.urls", namespace="books")),
+    path("api/borrow/", include("borrowings.urls", namespace="borrowings")),
     path(
         "api/user/",
-        include("user.urls",
-                namespace="user")
+        include("user.urls",namespace="user")
     ),
     # DOCS
     path("api/doc/", SpectacularAPIView.as_view(), name="schema"),
