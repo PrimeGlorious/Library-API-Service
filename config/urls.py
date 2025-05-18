@@ -27,8 +27,19 @@ from config import settings
 from django.conf.urls.static import static
 
 urlpatterns = [
+    # DEV
     path("admin/", admin.site.urls),
-    path("api/", include("books.urls")),
+    path(
+        "api-auth/",
+        include("rest_framework.urls",
+                namespace="rest_framework")),
+    # APPS
+    path("api/library/", include("books.urls", namespace="books")),
+    path("api/borrow/", include("borrowings.urls", namespace="borrowings")),
+    path(
+        "api/user/",
+        include("user.urls",namespace="user")
+    ),
     # DOCS
     path("api/doc/", SpectacularAPIView.as_view(), name="schema"),
     path(
@@ -41,16 +52,6 @@ urlpatterns = [
         SpectacularRedocView.as_view(url_name="schema"),
         name="redoc",
     ),
-    path(
-        "api/user/",
-        include("user.urls",
-                namespace="user")
-    ),
-    path(
-        "api-auth/",
-        include("rest_framework.urls",
-                namespace="rest_framework")),
-
 ]
 
 if settings.DEBUG:
