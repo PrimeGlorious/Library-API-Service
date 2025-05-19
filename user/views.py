@@ -7,9 +7,9 @@ from drf_yasg.utils import swagger_auto_schema
 from rest_framework import generics, status, response
 from rest_framework.authentication import SessionAuthentication
 from rest_framework.generics import GenericAPIView
-from rest_framework.permissions import IsAuthenticated
 from rest_framework_simplejwt.tokens import RefreshToken
 
+from user.permissions import IsValidateOrDontHaveAccess
 from user.serializers import UserSerializer, EmailVerificationSerializer
 from user.utils import Util
 
@@ -19,7 +19,7 @@ class ManageUserView(generics.RetrieveUpdateAPIView):
     authentication_classes = [
         SessionAuthentication,
     ]
-    permission_classes = (IsAuthenticated,)
+    permission_classes = (IsValidateOrDontHaveAccess,)
 
     def get_object(self):
         return self.request.user
