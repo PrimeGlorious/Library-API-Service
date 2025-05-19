@@ -40,6 +40,10 @@ urlpatterns = [
         "api/user/",
         include("user.urls",namespace="user")
     ),
+    path(
+        "api/payments/",
+        include("payments.urls",namespace="payments")
+    ),
     # DOCS
     path("api/doc/", SpectacularAPIView.as_view(), name="schema"),
     path(
