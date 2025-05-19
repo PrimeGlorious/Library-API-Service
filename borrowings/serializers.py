@@ -3,6 +3,7 @@ from rest_framework.exceptions import ValidationError
 
 from books.serializers import BookSerializer
 from borrowings.models import Borrowing
+from payments.stripe_utils import create_stripe_payment_session
 
 
 class BorrowingSerializer(serializers.ModelSerializer):
@@ -23,7 +24,15 @@ class BorrowingSerializer(serializers.ModelSerializer):
         book.inventory -= 1
         book.save()
 
-        return super().create(validated_data)
+        borrowing = super().create(validated_data)
+
+        request = self.context.get("request")
+        if request is None:
+            raise ValidationError("Request context is required for payment creation")
+
+        create_stripe_payment_session(borrowing, request)
+
+        return borrowing
 
 
 class BorrowingListSerializer(serializers.ModelSerializer):
