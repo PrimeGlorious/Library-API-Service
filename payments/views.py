@@ -1,9 +1,25 @@
-from django.shortcuts import render
-from rest_framework import status
+from rest_framework import status, permissions, viewsets
 from rest_framework.response import Response
 from rest_framework.views import APIView
 
 from payments.models import Payment
+from payments.serializers import PaymentSerializer
+
+
+class IsAdminOrOwner(permissions.BasePermission):
+    def has_object_permission(self, request, view, obj):
+        return request.user.is_staff or obj.borrowing.user == request.user
+
+
+class PaymentViewSet(viewsets.ReadOnlyModelViewSet):
+    serializer_class = PaymentSerializer
+    permission_classes = [permissions.IsAuthenticated, IsAdminOrOwner]
+
+    def get_queryset(self):
+        user = self.request.user
+        if user.is_staff:
+            return Payment.objects.all()
+        return Payment.objects.filter(borrowing__user=user)
 
 
 class PaymentSuccessView(APIView):
