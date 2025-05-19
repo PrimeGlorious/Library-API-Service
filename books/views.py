@@ -13,11 +13,8 @@ class BookViewSet(viewsets.ModelViewSet):
     queryset = Book.objects.all()
     serializer_class = BookSerializer
 
-    permission_classes = [IsAdminOrReadOnly]
-
     filter_backends = [DjangoFilterBackend, OrderingFilter]
     filterset_class = BookFilter
 
     ordering_fields = ["title", "daily_fee", "inventory", "author"]
     ordering = ["title"]
-
