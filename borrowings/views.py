@@ -38,11 +38,17 @@ class BorrowingsViewSet(
     def perform_create(self, serializer):
         serializer.save(user=self.request.user)
 
-
     def get_queryset(self):
-        queryset = self.queryset.filter(
-            user=self.request.user,
-        )
+        if self.request.user.is_superuser:
+            queryset = self.queryset
+
+            is_user = self.request.query_params.get("is_user", None)
+            if is_user:
+                queryset = queryset.filter(user=self.request.user)
+        else:
+            queryset = self.queryset.filter(
+                user=self.request.user,
+            )
 
         is_active = self.request.query_params.get("is_active", None)
         if is_active:
