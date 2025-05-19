@@ -16,11 +16,17 @@ bot = Bot(token=os.getenv("TELEGRAM_BOT_TOKEN"))
 
 @shared_task
 def send_telegram_message(chat_id: int, text: str):
+    async def send():
+        await bot.send_message(chat_id=chat_id, text=text)
     try:
-        async def send():
-            await bot.send_message(chat_id=chat_id, text=text)
-
-        asyncio.run(send())
+        try:
+            loop = asyncio.get_event_loop()
+            if loop.is_closed():
+                raise RuntimeError
+        except (RuntimeError, AssertionError):
+            loop = asyncio.new_event_loop()
+            asyncio.set_event_loop(loop)
+        loop.run_until_complete(send())
     except Exception as e:
         print(f"Failed to send telegram message: {e}")
         raise
