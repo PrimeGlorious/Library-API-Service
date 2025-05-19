@@ -25,3 +25,16 @@ class PaymentSerializer(serializers.ModelSerializer):
             "type",
             "created_at",
         )
+
+
+class PaymentNestedSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = Payment
+        fields = (
+            "id",
+            "status",
+            "type",
+            "session_url",
+            "money_to_pay",
+            "created_at",
+        )
