@@ -30,8 +30,9 @@ class BorrowingsViewSet(
 
     def retrieve(self, request, *args, **kwargs):
         instance = self.get_object()
-        if instance.user != request.user:
-            raise PermissionDenied("You do not have permission to view this borrowing.")
+        if not request.user.is_superuser:
+            if instance.user != request.user:
+                raise PermissionDenied("You do not have permission to view this borrowing.")
         return super().retrieve(request, *args, **kwargs)
 
     def perform_create(self, serializer):
