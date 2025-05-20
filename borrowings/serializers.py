@@ -23,9 +23,6 @@ class BorrowingSerializer(serializers.ModelSerializer):
         if book.inventory <= 0:
             raise serializers.ValidationError("This book is currently not available.")
 
-        book.inventory -= 1
-        book.save()
-
         borrowing = super().create(validated_data)
 
         request = self.context.get("request")

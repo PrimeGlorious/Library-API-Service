@@ -38,10 +38,10 @@ class BorrowingsViewSet(
     def perform_create(self, serializer):
         serializer.save(user=self.request.user)
 
-
     def get_queryset(self):
         queryset = self.queryset.filter(
             user=self.request.user,
+            is_paid=True
         )
 
         is_active = self.request.query_params.get("is_active", None)
@@ -77,8 +77,8 @@ class BorrowingsViewSet(
         borrowing.actual_return_date = timezone.now()
         borrowing.save()
 
-        if borrowing.actual_return_date.date() > borrowing.expected_return_date:
-            overdue_days = (borrowing.actual_return_date.date() - borrowing.expected_return_date).days
+        if borrowing.actual_return_date > borrowing.expected_return_date:
+            overdue_days = (borrowing.actual_return_date - borrowing.expected_return_date).days
             create_stripe_payment_session(borrowing, request, is_fine=True, overdue_days=overdue_days)
 
         return Response(status=status.HTTP_204_NO_CONTENT)

@@ -1,3 +1,5 @@
+import stripe
+from django.conf import settings
 from rest_framework import status, permissions, viewsets
 from rest_framework.response import Response
 from rest_framework.views import APIView
@@ -22,26 +24,40 @@ class PaymentViewSet(viewsets.ReadOnlyModelViewSet):
         return Payment.objects.filter(borrowing__user=user)
 
 
-class PaymentSuccessView(APIView):
-    def get(self, request):
-        session_id = request.query_params.get("session_id")
-        if not session_id:
-            return Response(
-                {"detail": "Session ID is required"},
-                status=status.HTTP_400_BAD_REQUEST
-            )
+class StripeWebhookView(APIView):
+    authentication_classes = []
+    permission_classes = []
 
-        payment = Payment.objects.filter(session_id=session_id).first()
-        if not payment:
-            return Response(
-                {"detail": "Payment session not found"},
-                status=status.HTTP_404_NOT_FOUND
-            )
+    def post(self, request):
+        payload = request.body
+        sig_header = request.headers.get("Stripe-Signature")
+        endpoint_secret = settings.STRIPE_WEBHOOK_SECRET
 
-        payment.status = Payment.Status.PAID
-        payment.save()
+        try:
+            event = stripe.Webhook.construct_event(payload, sig_header, endpoint_secret)
+        except ValueError:
+            return Response(status=status.HTTP_400_BAD_REQUEST)
+        except stripe.error.SignatureVerificationError:
+            return Response(status=status.HTTP_400_BAD_REQUEST)
 
-        return Response({"detail": "Payment completed successfully"})
+        if event["type"] == "checkout.session.completed":
+            session = event["data"]["object"]
+            session_id = session.get("id")
+            payment = Payment.objects.filter(session_id=session_id).first()
+            if payment and payment.status != Payment.Status.PAID:
+                payment.status = Payment.Status.PAID
+                payment.save()
+
+                borrowing = payment.borrowing
+                if borrowing and not borrowing.is_paid:
+                    borrowing.is_paid = True
+                    borrowing.save()
+                    borrowing.book.inventory -= 1
+                    borrowing.book.save()
+
+
+        return Response(status=status.HTTP_200_OK)
+
 
 class PaymentCancelView(APIView):
     def get(self, request):

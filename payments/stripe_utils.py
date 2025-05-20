@@ -30,7 +30,10 @@ def create_stripe_payment_session(borrowing, request, is_fine=False, overdue_day
             "quantity": 1,
         }],
         mode="payment",
-        success_url=request.build_absolute_uri(reverse("payments:success")) + "?session_id={CHECKOUT_SESSION_ID}",
+        success_url=request.build_absolute_uri(reverse(
+            "borrowings:borrowing-detail",
+            args=[borrowing.id]
+        )),
         cancel_url=request.build_absolute_uri(reverse("payments:cancel")) + "?session_id={CHECKOUT_SESSION_ID}",
     )
 
