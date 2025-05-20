@@ -15,6 +15,7 @@ from borrowings.serializers import (
     BorrowingListSerializer,
     BorrowingEmptySerializer
 )
+from payments.stripe_utils import create_stripe_payment_session
 
 
 class BorrowingsViewSet(
@@ -30,18 +31,29 @@ class BorrowingsViewSet(
 
     def retrieve(self, request, *args, **kwargs):
         instance = self.get_object()
-        if instance.user != request.user:
-            raise PermissionDenied("You do not have permission to view this borrowing.")
+        if not request.user.is_superuser:
+            if instance.user != request.user:
+                raise PermissionDenied("You do not have permission to view this borrowing.")
         return super().retrieve(request, *args, **kwargs)
 
     def perform_create(self, serializer):
         serializer.save(user=self.request.user)
 
-
     def get_queryset(self):
         queryset = self.queryset.filter(
             user=self.request.user,
+            is_paid=True
         )
+        if self.request.user.is_superuser:
+            queryset = self.queryset
+
+            is_user = self.request.query_params.get("is_user", None)
+            if is_user:
+                queryset = queryset.filter(user=self.request.user)
+        else:
+            queryset = self.queryset.filter(
+                user=self.request.user,
+            )
 
         is_active = self.request.query_params.get("is_active", None)
         if is_active:
@@ -65,21 +77,19 @@ class BorrowingsViewSet(
         borrowing = self.get_object()
 
         if request.user != borrowing.user:
-            return Response(
-                {"detail": "You are not the owner of this book"},
-                status=status.HTTP_403_FORBIDDEN
-            )
+            return Response({"detail": "You are not the owner of this book"}, status=status.HTTP_403_FORBIDDEN)
 
         if borrowing.actual_return_date is not None:
-            return Response(
-                {"detail": "Book already returned."},
-                status=status.HTTP_400_BAD_REQUEST
-            )
+            return Response({"detail": "Book already returned."}, status=status.HTTP_400_BAD_REQUEST)
 
         borrowing.book.inventory += 1
         borrowing.book.save()
 
         borrowing.actual_return_date = timezone.now()
         borrowing.save()
+
+        if borrowing.actual_return_date > borrowing.expected_return_date:
+            overdue_days = (borrowing.actual_return_date - borrowing.expected_return_date).days
+            create_stripe_payment_session(borrowing, request, is_fine=True, overdue_days=overdue_days)
 
         return Response(status=status.HTTP_204_NO_CONTENT)
