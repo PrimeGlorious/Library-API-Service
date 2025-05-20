@@ -1,4 +1,5 @@
 import jwt
+from datetime import timedelta, datetime
 from django.contrib.auth import get_user_model
 from django.contrib.sites.shortcuts import get_current_site
 from django.urls import reverse
@@ -7,19 +8,18 @@ from drf_yasg.utils import swagger_auto_schema
 from rest_framework import generics, status, response
 from rest_framework.authentication import SessionAuthentication
 from rest_framework.generics import GenericAPIView
+from rest_framework.permissions import IsAuthenticated, AllowAny
 from rest_framework_simplejwt.tokens import RefreshToken
+from django.conf import settings
+import time
 
-from user.permissions import IsValidateOrDontHaveAccess
 from user.serializers import UserSerializer, EmailVerificationSerializer
 from user.utils import Util
-
+from user.permissions import IsValidateOrDontHaveAccess
 
 class ManageUserView(generics.RetrieveUpdateAPIView):
     serializer_class = UserSerializer
-    authentication_classes = [
-        SessionAuthentication,
-    ]
-    permission_classes = (IsValidateOrDontHaveAccess,)
+    permission_classes = (IsValidateOrDontHaveAccess, IsAuthenticated)
 
     def get_object(self):
         return self.request.user
@@ -27,6 +27,7 @@ class ManageUserView(generics.RetrieveUpdateAPIView):
 
 class SignUp(GenericAPIView):
     serializer_class = UserSerializer
+    permission_classes = [AllowAny]
 
     def post(self, request):
         data = request.data
@@ -37,11 +38,18 @@ class SignUp(GenericAPIView):
 
         # getting tokens
         user_email = get_user_model().objects.get(email=user["email"])
-        tokens = RefreshToken.for_user(user_email).access_token
+
+        payload = {
+            'user_id': user_email.id,
+            'exp': int(time.time()) + 1,  # 10 minutes from now
+            'iat': int(time.time())
+        }
+        access_token = jwt.encode(payload, settings.SECRET_KEY, algorithm='HS256')
+        
         # send email for user verification
         current_site = get_current_site(request).domain
         relative_link = reverse("user:email-verify")
-        absurl = "http://" + current_site + relative_link + "?token=" + str(tokens)
+        absurl = "http://" + current_site + relative_link + "?token=" + access_token
         email_body = (
             f"Hi {user_email} Use the link below to verify your email \n" + absurl
         )
@@ -58,6 +66,7 @@ class SignUp(GenericAPIView):
 
 class VerifyEmail(GenericAPIView):
     serializer_class = EmailVerificationSerializer
+    permission_classes = [AllowAny]
 
     token_param_config = openapi.Parameter(
         'token',
@@ -91,8 +100,7 @@ class VerifyEmail(GenericAPIView):
     def get(self, request):
         token = request.GET.get("token")
         try:
-            payload = jwt.decode(token, options={"verify_signature": False})
-            print(payload)
+            payload = jwt.decode(token, settings.SECRET_KEY, algorithms=["HS256"])
             user = get_user_model().objects.get(id=payload["user_id"])
             if not user.is_verified:
                 user.is_verified = True
@@ -100,11 +108,11 @@ class VerifyEmail(GenericAPIView):
             return response.Response(
                 {"email": "Successfully activated"}, status=status.HTTP_200_OK
             )
-        except jwt.ExpiredSignatureError as identifier:
+        except jwt.ExpiredSignatureError:
             return response.Response(
                 {"error": "Activation Expired"}, status=status.HTTP_400_BAD_REQUEST
             )
-        except jwt.exceptions.DecodeError as identifier:
+        except jwt.exceptions.DecodeError:
             return response.Response(
                 {"error": "Invalid token"}, status=status.HTTP_400_BAD_REQUEST
             )
