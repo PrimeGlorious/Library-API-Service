@@ -11,6 +11,16 @@ https://docs.djangoproject.com/en/5.2/ref/settings/
 """
 
 import os
+from dotenv import load_dotenv
+
+
+load_dotenv()
+
+# STRIPE
+STRIPE_SECRET_KEY = os.getenv("STRIPE_SECRET_KEY", None)
+STRIPE_PUBLISHABLE_KEY = os.getenv("STRIPE_PUBLISHABLE_KEY", None)
+DOMAIN = os.getenv("DOMAIN", "http://127.0.0.1:8000")
+STRIPE_WEBHOOK_SECRET = os.getenv("STRIPE_WEBHOOK_SECRET", None)
 from pathlib import Path
 from dotenv import load_dotenv
 
@@ -57,6 +67,7 @@ INSTALLED_APPS = [
     "user",
     "drf_yasg",
     "borrowings",
+    "payments",
 ]
 
 MIDDLEWARE = [
