@@ -26,10 +26,12 @@ django-crispy-forms==2.3
 django-debug-toolbar==5.1.0
 django-filter==25.1
 djangorestframework==3.16.0
-djangorestframework-simplejwt==5.5.0
+djangorestframework_simplejwt==5.5.0
+dnspython==2.7.0
 dotenv==0.9.9
 drf-spectacular==0.28.0
 drf-yasg==1.21.10
+eventlet==0.40.0
 fabio==2024.9.0
 Faker==37.1.0
 flake8==7.1.1
@@ -50,6 +52,7 @@ kombu==5.5.3
 lxml==5.3.2
 magic-filter==1.0.12
 matplotlib==3.10.1
+mccabe==0.7.0
 multidict==6.4.3
 mypy_extensions==1.1.0
 numpy==2.2.4
@@ -60,8 +63,10 @@ platformdirs==4.3.8
 prompt_toolkit==3.0.51
 propcache==0.3.1
 psycopg2-binary==2.9.10
+pycodestyle==2.12.1
 pydantic==2.11.4
 pydantic_core==2.33.2
+pyflakes==3.2.0
 PyJWT==2.9.0
 pyparsing==3.2.3
 PyQt6==6.9.0
@@ -71,6 +76,7 @@ python-dateutil==2.9.0.post0
 python-dotenv==1.1.0
 pytz==2025.2
 PyYAML==6.0.2
+redis==5.3.0
 referencing==0.36.2
 requests==2.32.3
 rpds-py==0.25.0
