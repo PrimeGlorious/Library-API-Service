@@ -1,4 +1,4 @@
-### Both commands should be ran AFTER the main DRF application is running
+### All commands should be ran AFTER the main DRF application is running
 
 celery for this bot on windows shall be ran via the next command
 ```
