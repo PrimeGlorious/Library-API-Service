@@ -5,7 +5,6 @@ from books.filters import BookFilter
 
 class BookFilterTest(TestCase):
     def setUp(self):
-        # Создадим тестовые данные
         Book.objects.create(
             title="Python Programming",
             author="John Doe",
