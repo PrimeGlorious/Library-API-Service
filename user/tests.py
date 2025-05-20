@@ -1,6 +1,15 @@
 from django.test import TestCase
 from django.contrib.auth import get_user_model
+from django.urls import reverse
+from rest_framework.test import APIClient
+from rest_framework import status
+from rest_framework_simplejwt.tokens import RefreshToken
+from datetime import timedelta, datetime
+import jwt
+from django.conf import settings
+import time
 
+User = get_user_model()
 
 class UserManagerTests(TestCase):
     def setUp(self):
@@ -59,3 +68,138 @@ class UserManagerTests(TestCase):
         email = 'test@EXAMPLE.com'
         user = self.User.objects.create_user(email=email, password='testpass123')
         self.assertEqual(user.email, email.lower())
+
+
+class SignUpAndVerificationTests(TestCase):
+    def setUp(self):
+        self.client = APIClient()
+        self.signup_url = reverse('user:signup')
+        self.verify_url = reverse('user:email-verify')
+        
+        # Test user data
+        self.user_data = {
+            'email': 'test@example.com',
+            'password': 'testpass123',
+            'password2': 'testpass123'
+        }
+
+    def test_successful_user_registration(self):
+        """Test successful user registration"""
+        response = self.client.post(self.signup_url, self.user_data)
+        
+        self.assertEqual(response.status_code, status.HTTP_201_CREATED)
+        self.assertIn('user_data', response.data)
+        self.assertEqual(response.data['user_data']['email'], self.user_data['email'])
+        
+        # Check user was created
+        user = User.objects.get(email=self.user_data['email'])
+        self.assertFalse(user.is_verified)
+        self.assertTrue(user.check_password(self.user_data['password']))
+
+    def test_registration_with_mismatched_passwords(self):
+        """Test registration with mismatched passwords"""
+        data = self.user_data.copy()
+        data['password2'] = 'different_password'
+        
+        response = self.client.post(self.signup_url, data)
+        
+        self.assertEqual(response.status_code, status.HTTP_400_BAD_REQUEST)
+        self.assertIn('password2', response.data)
+        self.assertEqual(response.data['password2'][0], 'Password don`t match.')
+
+    def test_registration_with_short_password(self):
+        """Test registration with password shorter than 5 characters"""
+        data = self.user_data.copy()
+        data['password'] = '1234'
+        data['password2'] = '1234'
+        
+        response = self.client.post(self.signup_url, data)
+        
+        self.assertEqual(response.status_code, status.HTTP_400_BAD_REQUEST)
+        self.assertIn('password', response.data)
+
+    def test_registration_with_invalid_email(self):
+        """Test registration with invalid email format"""
+        data = self.user_data.copy()
+        data['email'] = 'invalid_email'
+        
+        response = self.client.post(self.signup_url, data)
+        
+        self.assertEqual(response.status_code, status.HTTP_400_BAD_REQUEST)
+        self.assertIn('email', response.data)
+
+    def test_email_verification_with_valid_token(self):
+        """Test email verification with valid token"""
+        # First register a user
+        response = self.client.post(self.signup_url, self.user_data)
+        self.assertEqual(response.status_code, status.HTTP_201_CREATED)
+        
+        # Get the user and create verification token
+        user = User.objects.get(email=self.user_data['email'])
+        token = RefreshToken.for_user(user).access_token
+        
+        # Verify email
+        response = self.client.get(f'{self.verify_url}?token={token}')
+        self.assertEqual(response.status_code, status.HTTP_200_OK)
+        self.assertEqual(response.data['email'], 'Successfully activated')
+        
+        # Check user is verified
+        user.refresh_from_db()
+        self.assertTrue(user.is_verified)
+
+    def test_email_verification_with_invalid_token(self):
+        """Test email verification with invalid token"""
+        response = self.client.get(f'{self.verify_url}?token=invalid_token')
+        self.assertEqual(response.status_code, status.HTTP_400_BAD_REQUEST)
+        self.assertEqual(response.data['error'], 'Invalid token')
+
+    def test_email_verification_with_expired_token(self):
+        """Test email verification with expired token"""
+        # First register a user
+        response = self.client.post(self.signup_url, self.user_data)
+        self.assertEqual(response.status_code, status.HTTP_201_CREATED)
+        
+        # Get the user and create expired token
+        user = User.objects.get(email=self.user_data['email'])
+        
+        # Create a token that expired 1 minute ago
+        payload = {
+            'user_id': user.id,
+            'exp': int(time.time()) - 60,  # Expired 1 minute ago
+            'iat': int(time.time()) - 600  # Created 10 minutes ago
+        }
+        expired_token = jwt.encode(payload, settings.SECRET_KEY, algorithm='HS256')
+        
+        # Try to verify with expired token
+        response = self.client.get(f'{self.verify_url}?token={expired_token}')
+        self.assertEqual(response.status_code, status.HTTP_400_BAD_REQUEST)
+        self.assertEqual(response.data['error'], 'Activation Expired')
+
+    def test_email_verification_without_token(self):
+        """Test email verification without providing token"""
+        response = self.client.get(self.verify_url)
+        self.assertEqual(response.status_code, status.HTTP_400_BAD_REQUEST)
+        self.assertEqual(response.data['error'], 'Invalid token')
+
+    def test_verification_of_already_verified_user(self):
+        """Test verification of already verified user"""
+        # First register a user
+        response = self.client.post(self.signup_url, self.user_data)
+        self.assertEqual(response.status_code, status.HTTP_201_CREATED)
+        
+        # Get the user and verify them
+        user = User.objects.get(email=self.user_data['email'])
+        user.is_verified = True
+        user.save()
+        
+        # Create verification token
+        token = RefreshToken.for_user(user).access_token
+        
+        # Try to verify again
+        response = self.client.get(f'{self.verify_url}?token={token}')
+        self.assertEqual(response.status_code, status.HTTP_200_OK)
+        self.assertEqual(response.data['email'], 'Successfully activated')
+        
+        # Check user is still verified
+        user.refresh_from_db()
+        self.assertTrue(user.is_verified)
