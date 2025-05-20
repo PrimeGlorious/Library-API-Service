@@ -9,7 +9,6 @@ class BookViewSetTest(APITestCase):
         self.admin_user = get_user_model().objects.create_superuser(
             email="admin@example.com", password="adminpass123"
         )
-        # Authenticate
         self.client.force_authenticate(user=self.admin_user)
 
         Book.objects.all().delete()
