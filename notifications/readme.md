@@ -1,7 +1,9 @@
 ### All commands should be ran AFTER the main DRF application is running
 
 First you should start redis process
-
+```
+docker run --name redis -p 6379:6379 -d redis
+```
 celery for this bot on windows shall be ran via the next command
 ```
 celery -A config worker -l INFO --pool=threads
