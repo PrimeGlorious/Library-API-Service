@@ -41,7 +41,7 @@ class SignUp(GenericAPIView):
 
         payload = {
             'user_id': user_email.id,
-            'exp': int(time.time()) + 1,  # 10 minutes from now
+            'exp': int(time.time()) + 600,  # 10 minutes from now
             'iat': int(time.time())
         }
         access_token = jwt.encode(payload, settings.SECRET_KEY, algorithm='HS256')
