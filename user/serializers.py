@@ -1,5 +1,7 @@
 from rest_framework import serializers
 from django.contrib.auth import get_user_model
+import jwt
+from django.conf import settings
 
 
 class UserSerializer(serializers.ModelSerializer):
@@ -34,10 +36,30 @@ class UserSerializer(serializers.ModelSerializer):
 
         return user
 
-class EmailVerificationSerializer(serializers.ModelSerializer):
-
+class EmailVerificationSerializer(serializers.Serializer):
     token = serializers.CharField(max_length=555)
 
-    class Meta:
-        model = get_user_model()
-        fields = ["token"]
+    def validate_token(self, value):
+        try:
+            payload = jwt.decode(value, settings.SECRET_KEY, algorithms=["HS256"])
+            user = get_user_model().objects.get(id=payload["user_id"])
+            return value
+        except jwt.ExpiredSignatureError:
+            raise serializers.ValidationError("Activation Expired")
+        except jwt.exceptions.DecodeError:
+            raise serializers.ValidationError("Invalid token")
+        except get_user_model().DoesNotExist:
+            raise serializers.ValidationError("User not found")
+
+
+class ResendVerificationSerializer(serializers.Serializer):
+    email = serializers.EmailField(required=True)
+
+    def validate_email(self, value):
+        try:
+            user = get_user_model().objects.get(email=value)
+            if user.is_verified:
+                raise serializers.ValidationError("User is already verified")
+            return value
+        except get_user_model().DoesNotExist:
+            raise serializers.ValidationError("User with this email does not exist")
