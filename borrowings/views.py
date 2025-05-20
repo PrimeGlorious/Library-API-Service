@@ -31,8 +31,9 @@ class BorrowingsViewSet(
 
     def retrieve(self, request, *args, **kwargs):
         instance = self.get_object()
-        if instance.user != request.user:
-            raise PermissionDenied("You do not have permission to view this borrowing.")
+        if not request.user.is_superuser:
+            if instance.user != request.user:
+                raise PermissionDenied("You do not have permission to view this borrowing.")
         return super().retrieve(request, *args, **kwargs)
 
     def perform_create(self, serializer):
@@ -43,6 +44,16 @@ class BorrowingsViewSet(
             user=self.request.user,
             is_paid=True
         )
+        if self.request.user.is_superuser:
+            queryset = self.queryset
+
+            is_user = self.request.query_params.get("is_user", None)
+            if is_user:
+                queryset = queryset.filter(user=self.request.user)
+        else:
+            queryset = self.queryset.filter(
+                user=self.request.user,
+            )
 
         is_active = self.request.query_params.get("is_active", None)
         if is_active:
