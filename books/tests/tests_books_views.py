@@ -1,10 +1,19 @@
 from django.urls import reverse
 from rest_framework.test import APITestCase
 from books.models import Book
+from django.contrib.auth import get_user_model
 
 
 class BookViewSetTest(APITestCase):
     def setUp(self):
+        # Create superuser
+        self.admin_user = get_user_model().objects.create_superuser(
+            email="admin@example.com",
+            password="adminpass123"
+        )
+        # Authenticate
+        self.client.force_authenticate(user=self.admin_user)
+        
         Book.objects.all().delete()
         self.book1 = Book.objects.create(
             title="Book One",
