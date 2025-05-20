@@ -203,3 +203,50 @@ class SignUpAndVerificationTests(TestCase):
         # Check user is still verified
         user.refresh_from_db()
         self.assertTrue(user.is_verified)
+
+    def test_resend_verification_email(self):
+        """Test resending verification email to unverified user"""
+        # First register a user
+        response = self.client.post(self.signup_url, self.user_data)
+        self.assertEqual(response.status_code, status.HTTP_201_CREATED)
+        
+        # Request resend verification email
+        resend_url = reverse('user:resend-verification')
+        response = self.client.post(resend_url, {'email': self.user_data['email']})
+        
+        self.assertEqual(response.status_code, status.HTTP_200_OK)
+        self.assertEqual(response.data['message'], 'Verification email has been resent')
+
+    def test_resend_verification_email_to_nonexistent_user(self):
+        """Test resending verification email to non-existent user"""
+        resend_url = reverse('user:resend-verification')
+        response = self.client.post(resend_url, {'email': 'nonexistent@example.com'})
+        
+        self.assertEqual(response.status_code, status.HTTP_404_NOT_FOUND)
+        self.assertEqual(response.data['error'], 'User with this email does not exist')
+
+    def test_resend_verification_email_to_verified_user(self):
+        """Test resending verification email to already verified user"""
+        # First register a user
+        response = self.client.post(self.signup_url, self.user_data)
+        self.assertEqual(response.status_code, status.HTTP_201_CREATED)
+        
+        # Verify the user
+        user = User.objects.get(email=self.user_data['email'])
+        user.is_verified = True
+        user.save()
+        
+        # Request resend verification email
+        resend_url = reverse('user:resend-verification')
+        response = self.client.post(resend_url, {'email': self.user_data['email']})
+        
+        self.assertEqual(response.status_code, status.HTTP_200_OK)
+        self.assertEqual(response.data['message'], 'User is already verified')
+
+    def test_resend_verification_email_without_email(self):
+        """Test resending verification email without providing email"""
+        resend_url = reverse('user:resend-verification')
+        response = self.client.post(resend_url, {})
+        
+        self.assertEqual(response.status_code, status.HTTP_400_BAD_REQUEST)
+        self.assertEqual(response.data['error'], 'Email is required')
