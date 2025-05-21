@@ -1,64 +1,89 @@
 """
 URL configuration for config project.
 
-The `urlpatterns` list routes URLs to views. For more information please see:
+The `urlpatterns` list routes URLs to views.
+For more information please see:
     https://docs.djangoproject.com/en/5.2/topics/http/urls/
-Examples:
-Function views
-    1. Add an import:  from my_app import views
-    2. Add a URL to urlpatterns:  path('', views.home, name='home')
-Class-based views
-    1. Add an import:  from other_app.views import Home
-    2. Add a URL to urlpatterns:  path('', Home.as_view(), name='home')
-Including another URLconf
-    1. Import the include() function: from django.urls import include, path
-    2. Add a URL to urlpatterns:  path('blog/', include('blog.urls'))
 """
 
 from django.contrib import admin
 from django.urls import path, include
+from django.conf.urls.static import static
+from config import settings
+
 from drf_spectacular.views import (
     SpectacularAPIView,
-    SpectacularRedocView,
     SpectacularSwaggerView,
+    SpectacularRedocView,
 )
 
-from config import settings
-from django.conf.urls.static import static
-
 urlpatterns = [
-    # DEV
-    path("admin/", admin.site.urls),
+    # Django Admin & DRF Auth
+    path(
+        "admin/",
+        admin.site.urls,
+    ),
     path(
         "api-auth/",
-        include("rest_framework.urls",
-                namespace="rest_framework")),
-    # APPS
-    path("api/library/", include("books.urls", namespace="books")),
-    path("api/borrow/", include("borrowings.urls", namespace="borrowings")),
+        include(
+            "rest_framework.urls",
+            namespace="rest_framework",
+        ),
+    ),
+    # Application Endpoints
+    path(
+        "api/library/",
+        include(
+            "books.urls",
+            namespace="books",
+        ),
+    ),
+    path(
+        "api/borrow/",
+        include(
+            "borrowings.urls",
+            namespace="borrowings",
+        ),
+    ),
     path(
         "api/user/",
-        include("user.urls",namespace="user")
+        include(
+            "user.urls",
+            namespace="user",
+        ),
     ),
     path(
         "api/payments/",
-        include("payments.urls", namespace="payments")
+        include(
+            "payments.urls",
+            namespace="payments",
+        ),
     ),
-    # DOCS
-    path("api/doc/", SpectacularAPIView.as_view(), name="schema"),
+    # API Documentation
+    path(
+        "api/doc/",
+        SpectacularAPIView.as_view(),
+        name="schema",
+    ),
     path(
         "api/doc/swagger/",
-        SpectacularSwaggerView.as_view(url_name="schema"),
+        SpectacularSwaggerView.as_view(
+            url_name="schema",
+        ),
         name="swagger-ui",
     ),
     path(
         "api/doc/redoc/",
-        SpectacularRedocView.as_view(url_name="schema"),
+        SpectacularRedocView.as_view(
+            url_name="schema",
+        ),
         name="redoc",
     ),
 ]
 
+# Media files (only in DEBUG)
 if settings.DEBUG:
     urlpatterns += static(
-        settings.MEDIA_URL, document_root=settings.MEDIA_ROOT
+        settings.MEDIA_URL,
+        document_root=settings.MEDIA_ROOT,
     )

@@ -13,7 +13,7 @@ from borrowings.serializers import (
     BorrowingDetailSerializer,
     BorrowingSerializer,
     BorrowingListSerializer,
-    BorrowingEmptySerializer
+    BorrowingEmptySerializer,
 )
 from payments.stripe_utils import create_stripe_payment_session
 
@@ -22,11 +22,9 @@ class BorrowingsViewSet(
     mixins.CreateModelMixin,
     mixins.ListModelMixin,
     mixins.RetrieveModelMixin,
-    GenericViewSet
+    GenericViewSet,
 ):
-    queryset = Borrowing.objects.filter(
-        is_paid=True
-    ).order_by("-borrow_date")
+    queryset = Borrowing.objects.filter(is_paid=True).order_by("-borrow_date")
     permission_classes = (IsAuthenticated,)
 
     filter_backends = [DjangoFilterBackend, OrderingFilter]
@@ -35,7 +33,9 @@ class BorrowingsViewSet(
         instance = self.get_object()
         if not request.user.is_superuser:
             if instance.user != request.user:
-                raise PermissionDenied("You do not have permission to view this borrowing.")
+                raise PermissionDenied(
+                    "You do not have permission to view this borrowing."
+                )
         return super().retrieve(request, *args, **kwargs)
 
     def perform_create(self, serializer):
@@ -75,10 +75,15 @@ class BorrowingsViewSet(
         borrowing = self.get_object()
 
         if request.user != borrowing.user:
-            return Response({"detail": "You are not the owner of this book"}, status=status.HTTP_403_FORBIDDEN)
+            return Response(
+                {"detail": "You are not the owner of this book"},
+                status=status.HTTP_403_FORBIDDEN,
+            )
 
         if borrowing.actual_return_date is not None:
-            return Response({"detail": "Book already returned."}, status=status.HTTP_400_BAD_REQUEST)
+            return Response(
+                {"detail": "Book already returned."}, status=status.HTTP_400_BAD_REQUEST
+            )
 
         borrowing.book.inventory += 1
         borrowing.book.save()
@@ -87,7 +92,11 @@ class BorrowingsViewSet(
         borrowing.save()
 
         if borrowing.actual_return_date > borrowing.expected_return_date:
-            overdue_days = (borrowing.actual_return_date - borrowing.expected_return_date).days
-            create_stripe_payment_session(borrowing, request, is_fine=True, overdue_days=overdue_days)
+            overdue_days = (
+                borrowing.actual_return_date - borrowing.expected_return_date
+            ).days
+            create_stripe_payment_session(
+                borrowing, request, is_fine=True, overdue_days=overdue_days
+            )
 
         return Response(status=status.HTTP_204_NO_CONTENT)

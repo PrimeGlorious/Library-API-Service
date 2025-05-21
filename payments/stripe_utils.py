@@ -10,9 +10,12 @@ stripe.api_key = settings.STRIPE_SECRET_KEY
 
 FINE_MULTIPLIER = 2
 
+
 def create_stripe_payment_session(borrowing, request, is_fine=False, overdue_days=0):
     if is_fine:
-        total_amount = Decimal(overdue_days) * borrowing.book.daily_fee * FINE_MULTIPLIER
+        total_amount = (
+            Decimal(overdue_days) * borrowing.book.daily_fee * FINE_MULTIPLIER
+        )
         payment_type = Payment.Type.FINE
     else:
         total_days = (borrowing.expected_return_date - borrowing.borrow_date).days
@@ -21,20 +24,24 @@ def create_stripe_payment_session(borrowing, request, is_fine=False, overdue_day
 
     session = stripe.checkout.Session.create(
         payment_method_types=["card"],
-        line_items=[{
-            "price_data": {
-                "currency": "usd",
-                "unit_amount": int(total_amount * 100),
-                "product_data": {"name": f"Payment for Borrowing ID {borrowing.id}"},
-            },
-            "quantity": 1,
-        }],
+        line_items=[
+            {
+                "price_data": {
+                    "currency": "usd",
+                    "unit_amount": int(total_amount * 100),
+                    "product_data": {
+                        "name": f"Payment for Borrowing ID {borrowing.id}"
+                    },
+                },
+                "quantity": 1,
+            }
+        ],
         mode="payment",
-        success_url=request.build_absolute_uri(reverse(
-            "borrowings:borrowing-detail",
-            args=[borrowing.id]
-        )),
-        cancel_url=request.build_absolute_uri(reverse("payments:cancel")) + "?session_id={CHECKOUT_SESSION_ID}",
+        success_url=request.build_absolute_uri(
+            reverse("borrowings:borrowing-detail", args=[borrowing.id])
+        ),
+        cancel_url=request.build_absolute_uri(reverse("payments:cancel"))
+        + "?session_id={CHECKOUT_SESSION_ID}",
     )
 
     payment = Payment.objects.create(

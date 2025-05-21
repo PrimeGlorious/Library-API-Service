@@ -13,9 +13,14 @@ from rest_framework_simplejwt.tokens import RefreshToken
 from django.conf import settings
 import time
 
-from user.serializers import UserSerializer, EmailVerificationSerializer, ResendVerificationSerializer
+from user.serializers import (
+    UserSerializer,
+    EmailVerificationSerializer,
+    ResendVerificationSerializer,
+)
 from user.utils import Util
 from user.permissions import IsValidateOrDontHaveAccess
+
 
 class ManageUserView(generics.RetrieveUpdateAPIView):
     serializer_class = UserSerializer
@@ -40,12 +45,12 @@ class SignUp(GenericAPIView):
         user_email = get_user_model().objects.get(email=user["email"])
 
         payload = {
-            'user_id': user_email.id,
-            'exp': int(time.time()) + 600,  # 10 minutes from now
-            'iat': int(time.time())
+            "user_id": user_email.id,
+            "exp": int(time.time()) + 600,  # 10 minutes from now
+            "iat": int(time.time()),
         }
-        access_token = jwt.encode(payload, settings.SECRET_KEY, algorithm='HS256')
-        
+        access_token = jwt.encode(payload, settings.SECRET_KEY, algorithm="HS256")
+
         # send email for user verification
         current_site = get_current_site(request).domain
         relative_link = reverse("user:email-verify")
@@ -69,11 +74,11 @@ class VerifyEmail(GenericAPIView):
     permission_classes = [AllowAny]
 
     token_param_config = openapi.Parameter(
-        'token',
+        "token",
         in_=openapi.IN_QUERY,
-        description='Email verification token',
+        description="Email verification token",
         type=openapi.TYPE_STRING,
-        required=True
+        required=True,
     )
 
     @swagger_auto_schema(
@@ -81,21 +86,13 @@ class VerifyEmail(GenericAPIView):
         responses={
             200: openapi.Response(
                 description="Email successfully verified",
-                examples={
-                    "application/json": {
-                        "email": "Successfully activated"
-                    }
-                }
+                examples={"application/json": {"email": "Successfully activated"}},
             ),
             400: openapi.Response(
                 description="Invalid or expired token",
-                examples={
-                    "application/json": {
-                        "error": "Activation Expired"
-                    }
-                }
-            )
-        }
+                examples={"application/json": {"error": "Activation Expired"}},
+            ),
+        },
     )
     def get(self, request):
         token = request.GET.get("token")
@@ -121,29 +118,28 @@ class VerifyEmail(GenericAPIView):
 class ResendVerificationEmail(GenericAPIView):
     permission_classes = [AllowAny]
     serializer_class = ResendVerificationSerializer
+
     def post(self, request):
-        email = request.data.get('email')
+        email = request.data.get("email")
         if not email:
             return response.Response(
-                {"error": "Email is required"}, 
-                status=status.HTTP_400_BAD_REQUEST
+                {"error": "Email is required"}, status=status.HTTP_400_BAD_REQUEST
             )
 
         try:
             user = get_user_model().objects.get(email=email)
             if user.is_verified:
                 return response.Response(
-                    {"message": "User is already verified"}, 
-                    status=status.HTTP_200_OK
+                    {"message": "User is already verified"}, status=status.HTTP_200_OK
                 )
 
             # Generate new verification token
             payload = {
-                'user_id': user.id,
-                'exp': int(time.time()) + 600,  # 10 minutes from now
-                'iat': int(time.time())
+                "user_id": user.id,
+                "exp": int(time.time()) + 600,  # 10 minutes from now
+                "iat": int(time.time()),
             }
-            access_token = jwt.encode(payload, settings.SECRET_KEY, algorithm='HS256')
+            access_token = jwt.encode(payload, settings.SECRET_KEY, algorithm="HS256")
 
             # Send verification email
             current_site = get_current_site(request).domain
@@ -161,12 +157,12 @@ class ResendVerificationEmail(GenericAPIView):
             Util.send_email(data=data)
 
             return response.Response(
-                {"message": "Verification email has been resent"}, 
-                status=status.HTTP_200_OK
+                {"message": "Verification email has been resent"},
+                status=status.HTTP_200_OK,
             )
 
         except get_user_model().DoesNotExist:
             return response.Response(
-                {"error": "User with this email does not exist"}, 
-                status=status.HTTP_404_NOT_FOUND
+                {"error": "User with this email does not exist"},
+                status=status.HTTP_404_NOT_FOUND,
             )

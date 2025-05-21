@@ -17,6 +17,14 @@ class BorrowingSerializer(serializers.ModelSerializer):
             "payments",
         )
 
+    def validate(self, attrs):
+        request = self.context.get("request")
+        if request is None:
+            raise serializers.ValidationError(
+                "Request context is required for payment creation"
+            )
+        return attrs
+
     def create(self, validated_data):
         book = validated_data.get("book")
 
@@ -25,12 +33,9 @@ class BorrowingSerializer(serializers.ModelSerializer):
 
         borrowing = super().create(validated_data)
 
-        request = self.context.get("request")
-        if request is None:
-            raise serializers.ValidationError("Request context is required for payment creation")
-
         from payments.stripe_utils import create_stripe_payment_session
-        create_stripe_payment_session(borrowing, request)
+
+        create_stripe_payment_session(borrowing, self.context["request"])
 
         return borrowing
 
@@ -49,7 +54,7 @@ class BorrowingListSerializer(serializers.ModelSerializer):
             "borrow_date",
             "expected_return_date",
             "actual_return_date",
-            "book_title"
+            "book_title",
         )
 
 
@@ -63,7 +68,7 @@ class BorrowingDetailSerializer(serializers.ModelSerializer):
             "borrow_date",
             "expected_return_date",
             "actual_return_date",
-            "book"
+            "book",
         )
 
 
