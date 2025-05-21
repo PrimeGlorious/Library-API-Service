@@ -1,7 +1,7 @@
 from django.test import TestCase
 from django.contrib.auth import get_user_model
 from django.urls import reverse
-from rest_framework.test import APIClient
+from rest_framework.test import APIClient, APITestCase
 from rest_framework import status
 from rest_framework_simplejwt.tokens import RefreshToken
 from datetime import timedelta, datetime
@@ -250,3 +250,55 @@ class SignUpAndVerificationTests(TestCase):
         
         self.assertEqual(response.status_code, status.HTTP_400_BAD_REQUEST)
         self.assertEqual(response.data['error'], 'Email is required')
+
+
+class TokenEndpointsTest(APITestCase):
+    def setUp(self):
+        self.user = User.objects.create_user(
+            email="testuser@example.com", password="testpassword"
+        )
+        self.token_url = reverse("user:token_obtain_pair")
+        self.token_refresh_url = reverse("user:token_refresh")
+        self.token_verify_url = reverse("user:token_verify")
+
+    def test_token_obtain_pair_success(self):
+        """Test obtaining access and refresh tokens with valid credentials"""
+        response = self.client.post(
+            self.token_url, {"email": self.user.email, "password": "testpassword"}
+        )
+        self.assertEqual(response.status_code, status.HTTP_200_OK)
+        self.assertIn("access", response.data)
+        self.assertIn("refresh", response.data)
+
+    def test_token_obtain_pair_invalid_credentials(self):
+        """Test obtaining tokens with invalid credentials"""
+        response = self.client.post(
+            self.token_url, {"email": self.user.email, "password": "wrongpassword"}
+        )
+        self.assertEqual(response.status_code, status.HTTP_401_UNAUTHORIZED)
+        self.assertIn("detail", response.data)
+
+    def test_token_refresh_success(self):
+        """Test refreshing access token with a valid refresh token"""
+        refresh = RefreshToken.for_user(self.user)
+        response = self.client.post(self.token_refresh_url, {"refresh": str(refresh)})
+        self.assertEqual(response.status_code, status.HTTP_200_OK)
+        self.assertIn("access", response.data)
+
+    def test_token_refresh_invalid_token(self):
+        """Test refreshing access token with an invalid refresh token"""
+        response = self.client.post(self.token_refresh_url, {"refresh": "invalidtoken"})
+        self.assertEqual(response.status_code, status.HTTP_401_UNAUTHORIZED)
+        self.assertIn("detail", response.data)
+
+    def test_token_verify_success(self):
+        """Test verifying a valid access token"""
+        access = RefreshToken.for_user(self.user).access_token
+        response = self.client.post(self.token_verify_url, {"token": str(access)})
+        self.assertEqual(response.status_code, status.HTTP_200_OK)
+
+    def test_token_verify_invalid_token(self):
+        """Test verifying an invalid access token"""
+        response = self.client.post(self.token_verify_url, {"token": "invalidtoken"})
+        self.assertEqual(response.status_code, status.HTTP_401_UNAUTHORIZED)
+        self.assertIn("detail", response.data)
