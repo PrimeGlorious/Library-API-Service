@@ -4,6 +4,9 @@ import jwt
 from django.conf import settings
 
 
+User = get_user_model()
+
+
 class UserSerializer(serializers.ModelSerializer):
 
     password = serializers.CharField(
@@ -14,7 +17,7 @@ class UserSerializer(serializers.ModelSerializer):
     )
 
     class Meta:
-        model = get_user_model()
+        model = User
         fields = ("id", "email", "password", "password2", "is_staff")
         read_only_fields = ("is_staff",)
 
@@ -25,7 +28,7 @@ class UserSerializer(serializers.ModelSerializer):
 
     def create(self, validated_data):
         validated_data.pop("password2")
-        return get_user_model().objects.create_user(**validated_data)
+        return User.objects.create_user(**validated_data)
 
     def update(self, instance, validated_data):
         password = validated_data.pop("password", None)
@@ -43,13 +46,13 @@ class EmailVerificationSerializer(serializers.Serializer):
     def validate_token(self, value):
         try:
             payload = jwt.decode(value, settings.SECRET_KEY, algorithms=["HS256"])
-            user = get_user_model().objects.get(id=payload["user_id"])
+            user = User.objects.get(id=payload["user_id"])
             return value
         except jwt.ExpiredSignatureError:
             raise serializers.ValidationError("Activation Expired")
         except jwt.exceptions.DecodeError:
             raise serializers.ValidationError("Invalid token")
-        except get_user_model().DoesNotExist:
+        except User.DoesNotExist:
             raise serializers.ValidationError("User not found")
 
 
@@ -58,9 +61,9 @@ class ResendVerificationSerializer(serializers.Serializer):
 
     def validate_email(self, value):
         try:
-            user = get_user_model().objects.get(email=value)
+            user = User.objects.get(email=value)
             if user.is_verified:
                 raise serializers.ValidationError("User is already verified")
             return value
-        except get_user_model().DoesNotExist:
+        except User.DoesNotExist:
             raise serializers.ValidationError("User with this email does not exist")
