@@ -18,6 +18,7 @@ bot = Bot(token=os.getenv("TELEGRAM_BOT_TOKEN"))
 def send_telegram_message(chat_id: int, text: str):
     async def send():
         await bot.send_message(chat_id=chat_id, text=text)
+
     try:
         try:
             loop = asyncio.get_event_loop()
@@ -37,12 +38,11 @@ def check_and_send_return_reminders():
     today = timezone.now().date()
     tomorrow = today + timedelta(days=1)
 
-    # Get borrowings that are due tomorrow
     due_tomorrow = Borrowing.objects.filter(
         expected_return_date=tomorrow,
         actual_return_date__isnull=True,
-        user__chat_id__isnull=False
-    ).select_related('user', 'book')
+        user__chat_id__isnull=False,
+    ).select_related("user", "book")
 
     for borrowing in due_tomorrow:
         message = (
@@ -51,12 +51,11 @@ def check_and_send_return_reminders():
         )
         send_telegram_message.delay(borrowing.user.chat_id, message)
 
-    # Get overdue borrowings
     overdue = Borrowing.objects.filter(
         expected_return_date__lt=today,
         actual_return_date__isnull=True,
-        user__chat_id__isnull=False
-    ).select_related('user', 'book')
+        user__chat_id__isnull=False,
+    ).select_related("user", "book")
 
     for borrowing in overdue:
         message = (
