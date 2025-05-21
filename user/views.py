@@ -22,12 +22,39 @@ from user.utils import Util
 from user.permissions import IsValidateOrDontHaveAccess
 
 
+User = get_user_model()
+
 class ManageUserView(generics.RetrieveUpdateAPIView):
     serializer_class = UserSerializer
     permission_classes = (IsValidateOrDontHaveAccess, IsAuthenticated)
 
     def get_object(self):
         return self.request.user
+
+
+def create_confirm_mail_with_token(user, request):
+    user_email = User.objects.get(email=user["email"])
+
+    payload = {
+        "user_id": user_email.id,
+        "exp": int(time.time()) + 600,  # 10 minutes from now
+        "iat": int(time.time()),
+    }
+    access_token = jwt.encode(payload, settings.SECRET_KEY, algorithm="HS256")
+
+    # send email for user verification
+    current_site = get_current_site(request).domain
+    relative_link = reverse("user:email-verify")
+    absurl = "http://" + current_site + relative_link + "?token=" + access_token
+    email_body = (
+            f"Hi {user_email} Use the link below to verify your email \n" + absurl
+    )
+    data = {
+        "email_body": email_body,
+        "to_email": user["email"],
+        "email_subject": "Verify your email",
+    }
+    Util.send_email(data=data)
 
 
 class SignUp(GenericAPIView):
@@ -41,30 +68,7 @@ class SignUp(GenericAPIView):
         serializer.save()
         user = serializer.data
 
-        # getting tokens
-        user_email = get_user_model().objects.get(email=user["email"])
-
-        payload = {
-            "user_id": user_email.id,
-            "exp": int(time.time()) + 600,  # 10 minutes from now
-            "iat": int(time.time()),
-        }
-        access_token = jwt.encode(payload, settings.SECRET_KEY, algorithm="HS256")
-
-        # send email for user verification
-        current_site = get_current_site(request).domain
-        relative_link = reverse("user:email-verify")
-        absurl = "http://" + current_site + relative_link + "?token=" + access_token
-        email_body = (
-            f"Hi {user_email} Use the link below to verify your email \n" + absurl
-        )
-        data = {
-            "email_body": email_body,
-            "to_email": user["email"],
-            "email_subject": "Verify your email",
-        }
-
-        Util.send_email(data=data)
+        create_confirm_mail_with_token(user, request)
 
         return response.Response({"user_data": user}, status=status.HTTP_201_CREATED)
 
@@ -133,28 +137,7 @@ class ResendVerificationEmail(GenericAPIView):
                     {"message": "User is already verified"}, status=status.HTTP_200_OK
                 )
 
-            # Generate new verification token
-            payload = {
-                "user_id": user.id,
-                "exp": int(time.time()) + 600,  # 10 minutes from now
-                "iat": int(time.time()),
-            }
-            access_token = jwt.encode(payload, settings.SECRET_KEY, algorithm="HS256")
-
-            # Send verification email
-            current_site = get_current_site(request).domain
-            relative_link = reverse("user:email-verify")
-            absurl = "http://" + current_site + relative_link + "?token=" + access_token
-            email_body = (
-                f"Hi {user} Use the link below to verify your email \n" + absurl
-            )
-            data = {
-                "email_body": email_body,
-                "to_email": user.email,
-                "email_subject": "Verify your email",
-            }
-
-            Util.send_email(data=data)
+            create_confirm_mail_with_token(user, request)
 
             return response.Response(
                 {"message": "Verification email has been resent"},
