@@ -43,9 +43,7 @@ class BookFilterTest(TestCase):
         f = BookFilter(data={"cover": Book.CoverChoices.SOFT})
         qs = f.qs
         self.assertEqual(qs.count(), 1)
-        self.assertTrue(
-            all(book.cover == Book.CoverChoices.SOFT for book in qs)
-        )
+        self.assertTrue(all(book.cover == Book.CoverChoices.SOFT for book in qs))
 
     def test_filter_by_daily_fee_range(self):
         f = BookFilter(data={"daily_fee_min": 12, "daily_fee_max": 20})

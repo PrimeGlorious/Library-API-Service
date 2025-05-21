@@ -40,9 +40,7 @@ SECRET_KEY = os.environ.get("SECRET_KEY")
 # SECURITY WARNING: don't run with debug turned on in production!
 DEBUG = os.environ.get("DEBUG", "False") == "True"
 
-ALLOWED_HOSTS = os.environ.get("ALLOWED_HOSTS", "localhost,127.0.0.1").split(
-    ","
-)
+ALLOWED_HOSTS = os.environ.get("ALLOWED_HOSTS", "localhost,127.0.0.1").split(",")
 
 USE_X_FORWARDED_HOST = True
 SECURE_PROXY_SSL_HEADER = ("HTTP_X_FORWARDED_PROTO", "https")
@@ -187,9 +185,9 @@ REST_FRAMEWORK = {
 }
 
 SIMPLE_JWT = {
-   "ACCESS_TOKEN_LIFETIME": timedelta(minutes=30),
-   "REFRESH_TOKEN_LIFETIME": timedelta(days=1),
-   "ROTATE_REFRESH_TOKENS": True
+    "ACCESS_TOKEN_LIFETIME": timedelta(minutes=30),
+    "REFRESH_TOKEN_LIFETIME": timedelta(days=1),
+    "ROTATE_REFRESH_TOKENS": True,
 }
 
 

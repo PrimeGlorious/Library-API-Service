@@ -6,12 +6,12 @@ from django.conf import settings
 
 class UserSerializer(serializers.ModelSerializer):
 
-    password = serializers.CharField(style={"input_type": "password"},
-                                     write_only=True,
-                                     min_length=5)
-    password2 = serializers.CharField(style={"input_type": "password"},
-                                      write_only=True,
-                                      min_length=5)
+    password = serializers.CharField(
+        style={"input_type": "password"}, write_only=True, min_length=5
+    )
+    password2 = serializers.CharField(
+        style={"input_type": "password"}, write_only=True, min_length=5
+    )
 
     class Meta:
         model = get_user_model()
@@ -35,6 +35,7 @@ class UserSerializer(serializers.ModelSerializer):
             user.save()
 
         return user
+
 
 class EmailVerificationSerializer(serializers.Serializer):
     token = serializers.CharField(max_length=555)
