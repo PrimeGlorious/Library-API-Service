@@ -10,13 +10,13 @@ class BorrowingAdmin(admin.ModelAdmin):
         "borrow_date",
         "expected_return_date",
         "actual_return_date",
-        "is_paid"
+        "is_paid",
     )
     list_filter = (
         "is_paid",
         "borrow_date",
         "expected_return_date",
-        "actual_return_date"
+        "actual_return_date",
     )
     search_fields = ("book__title", "user__email")
     ordering = ("-borrow_date",)

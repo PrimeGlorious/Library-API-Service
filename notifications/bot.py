@@ -18,10 +18,12 @@ dp = Dispatcher()
 
 auth_sessions = {}
 
+
 @dp.message(Command("start"))
 async def start_handler(message: types.Message):
     auth_sessions[message.chat.id] = {"step": "email"}
     await message.answer("👤 Please enter your email:")
+
 
 @dp.message(F.text)
 async def handle_auth(message: types.Message):
@@ -42,7 +44,7 @@ async def handle_auth(message: types.Message):
     elif session["step"] == "password":
         email = session["email"]
         password = message.text.strip()
-        
+
         # Wrap authenticate with sync_to_async
         user = await sync_to_async(authenticate)(username=email, password=password)
 
@@ -50,14 +52,19 @@ async def handle_auth(message: types.Message):
             user.chat_id = chat_id
             await sync_to_async(user.save)()
             if not user.is_staff:
-                await message.answer("✅ Auth successful. You will now receive notifications about your books and borrowings.")
+                await message.answer(
+                    "✅ Auth successful. You will now receive notifications about your books and borrowings."
+                )
             else:
-                await message.answer("✅ Auth successful. Since you are admin, you will receive notifications about all "
-                                     " books and borrowings changes in database🗣️.")
+                await message.answer(
+                    "✅ Auth successful. Since you are admin, you will receive notifications about all "
+                    " books and borrowings changes in database🗣️."
+                )
         else:
             await message.answer("❌ Invalid credentials. Type /start to try again.")
 
         auth_sessions.pop(chat_id, None)
+
 
 async def main():
     await dp.start_polling(bot)

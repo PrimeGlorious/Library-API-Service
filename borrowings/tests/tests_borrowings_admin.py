@@ -66,9 +66,7 @@ class BorrowingAdminTest(TestCase):
 
     def test_search_fields(self):
         """Test that search_fields contains all required fields"""
-        self.assertEqual(
-            self.admin.search_fields, ("book__title", "user__email")
-        )
+        self.assertEqual(self.admin.search_fields, ("book__title", "user__email"))
 
     def test_ordering(self):
         """Test that ordering is set correctly"""

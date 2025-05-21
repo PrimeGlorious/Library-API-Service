@@ -51,7 +51,9 @@ class PaymentModelTest(TestCase):
         self.assertEqual(str(self.payment), expected_str)
 
     def test_payment_status_choices(self):
-        self.assertIn(self.payment.status, [status[0] for status in Payment.Status.choices])
+        self.assertIn(
+            self.payment.status, [status[0] for status in Payment.Status.choices]
+        )
 
     def test_payment_type_choices(self):
         self.assertIn(self.payment.type, [type[0] for type in Payment.Type.choices])

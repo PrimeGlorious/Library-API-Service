@@ -14,24 +14,23 @@ class BorrowingModelTest(TestCase):
     def setUp(self):
         # Create test user
         self.user = User.objects.create_user(
-            email="test@example.com",
-            password="testpass123"
+            email="test@example.com", password="testpass123"
         )
-        
+
         # Create test book
         self.book = Book.objects.create(
             title="Test Book",
             author="Test Author",
             cover="HARD",
             inventory=5,
-            daily_fee=10.00
+            daily_fee=10.00,
         )
-        
+
         # Create test borrowing with valid dates
         self.borrowing = Borrowing.objects.create(
             book=self.book,
             user=self.user,
-            expected_return_date=timezone.now().date() + timedelta(days=7)
+            expected_return_date=timezone.now().date() + timedelta(days=7),
         )
 
     def test_borrowing_creation(self):
@@ -49,7 +48,7 @@ class BorrowingModelTest(TestCase):
         """Test the is_active method"""
         # Test active borrowing
         self.assertEqual(self.borrowing.is_active(), "true")
-        
+
         # Test inactive borrowing
         self.borrowing.actual_return_date = timezone.now().date()
         self.borrowing.save()
@@ -62,30 +61,30 @@ class BorrowingModelTest(TestCase):
             Borrowing.objects.create(
                 book=self.book,
                 user=self.user,
-                expected_return_date=timezone.now().date() - timedelta(days=1)
+                expected_return_date=timezone.now().date() - timedelta(days=1),
             )
         self.assertEqual(
             str(context.exception),
-            "[ErrorDetail(string='The return date must be later than the borrowing date.', code='invalid')]"
+            "[ErrorDetail(string='The return date must be later than the borrowing date.', code='invalid')]",
         )
-        
+
         # Test with current date
         with self.assertRaises(ValidationError) as context:
             Borrowing.objects.create(
                 book=self.book,
                 user=self.user,
-                expected_return_date=timezone.now().date()
+                expected_return_date=timezone.now().date(),
             )
         self.assertEqual(
             str(context.exception),
-            "[ErrorDetail(string='The return date must be later than the borrowing date.', code='invalid')]"
+            "[ErrorDetail(string='The return date must be later than the borrowing date.', code='invalid')]",
         )
 
     def test_borrowing_relationships(self):
         """Test relationships between Borrowing and related models"""
         # Test book relationship
         self.assertEqual(self.borrowing.book.borrowings.first(), self.borrowing)
-        
+
         # Test user relationship
         self.assertEqual(self.borrowing.user.borrowings.first(), self.borrowing)
 
@@ -102,7 +101,7 @@ class BorrowingModelTest(TestCase):
         self.borrowing.actual_return_date = return_date
         self.borrowing.save()
         self.assertEqual(self.borrowing.actual_return_date, return_date)
-        
+
         # Update payment status
         self.borrowing.is_paid = True
         self.borrowing.save()

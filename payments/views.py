@@ -55,11 +55,11 @@ class StripeWebhookView(APIView):
                     borrowing.book.inventory -= 1
                     borrowing.book.save()
 
-
         return Response(status=status.HTTP_200_OK)
 
 
 class PaymentCancelView(APIView):
     def get(self, request):
-        return Response({"detail": "Payment was cancelled. "
-                                   "You can pay later within 24 hours."})
+        return Response(
+            {"detail": "Payment was cancelled. " "You can pay later within 24 hours."}
+        )

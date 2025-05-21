@@ -1,9 +1,7 @@
 from django.conf import settings
 from django.db import models
 from django.utils.timezone import now
-from rest_framework.exceptions import (
-    ValidationError
-)
+from rest_framework.exceptions import ValidationError
 
 from books.models import Book
 
@@ -30,7 +28,9 @@ class Borrowing(models.Model):
         expected_return_date = self.expected_return_date
 
         if borrow_date >= expected_return_date:
-            raise ValidationError("The return date must be later than the borrowing date.")
+            raise ValidationError(
+                "The return date must be later than the borrowing date."
+            )
 
     def save(self, *args, **kwargs):
         self.full_clean()

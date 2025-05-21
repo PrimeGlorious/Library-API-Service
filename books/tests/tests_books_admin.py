@@ -27,9 +27,7 @@ class BookAdminTest(TestCase):
             "daily_fee",
             "cover_image",
         ]
-        self.assertEqual(
-            list(self.book_admin.list_display), expected_list_display
-        )
+        self.assertEqual(list(self.book_admin.list_display), expected_list_display)
 
     def test_admin_view(self):
         url = reverse("admin:books_book_changelist")

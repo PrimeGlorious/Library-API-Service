@@ -7,7 +7,6 @@ class IsAdminOrReadOnly(BasePermission):
     Multiple administrators can create, update, or delete.
     """
 
-
     def has_permission(self, request, view):
         if request.method in SAFE_METHODS:
             return True

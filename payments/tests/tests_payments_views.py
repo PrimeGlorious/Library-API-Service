@@ -115,4 +115,7 @@ class PaymentCancelViewTest(TestCase):
         url = reverse("payments:cancel")
         response = self.client.get(url)
         self.assertEqual(response.status_code, status.HTTP_200_OK)
-        self.assertEqual(response.data["detail"], "Payment was cancelled. You can pay later within 24 hours.")
+        self.assertEqual(
+            response.data["detail"],
+            "Payment was cancelled. You can pay later within 24 hours.",
+        )
