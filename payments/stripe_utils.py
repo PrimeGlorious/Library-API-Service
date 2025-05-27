@@ -1,17 +1,19 @@
 import stripe
-from django.conf import settings
 from decimal import Decimal
+from django.conf import settings
 from django.urls import reverse
 
 from payments.models import Payment
-
 
 stripe.api_key = settings.STRIPE_SECRET_KEY
 
 FINE_MULTIPLIER = 2
 
+SUCCESS_URL_TEMPLATE = "borrowings:borrowing-detail"
+CANCEL_URL_TEMPLATE = "payments:cancel"
 
-def create_stripe_payment_session(borrowing, request, is_fine=False, overdue_days=0):
+
+def get_total_amount_and_type(borrowing, is_fine=False, overdue_days=0):
     if is_fine:
         total_amount = (
             Decimal(overdue_days) * borrowing.book.daily_fee * FINE_MULTIPLIER
@@ -21,6 +23,23 @@ def create_stripe_payment_session(borrowing, request, is_fine=False, overdue_day
         total_days = (borrowing.expected_return_date - borrowing.borrow_date).days
         total_amount = borrowing.book.daily_fee * Decimal(total_days)
         payment_type = Payment.Type.PAYMENT
+    return total_amount, payment_type
+
+
+def get_success_url(request, borrowing):
+    return request.build_absolute_uri(
+        reverse(SUCCESS_URL_TEMPLATE, args=[borrowing.id])
+    )
+
+
+def get_cancel_url(request):
+    return request.build_absolute_uri(
+        reverse(CANCEL_URL_TEMPLATE)
+    ) + "?session_id={CHECKOUT_SESSION_ID}"
+
+
+def create_stripe_payment_session(borrowing, request, is_fine=False, overdue_days=0):
+    total_amount, payment_type = get_total_amount_and_type(borrowing, is_fine, overdue_days)
 
     session = stripe.checkout.Session.create(
         payment_method_types=["card"],
@@ -37,11 +56,8 @@ def create_stripe_payment_session(borrowing, request, is_fine=False, overdue_day
             }
         ],
         mode="payment",
-        success_url=request.build_absolute_uri(
-            reverse("borrowings:borrowing-detail", args=[borrowing.id])
-        ),
-        cancel_url=request.build_absolute_uri(reverse("payments:cancel"))
-        + "?session_id={CHECKOUT_SESSION_ID}",
+        success_url=get_success_url(request, borrowing),
+        cancel_url=get_cancel_url(request),
     )
 
     payment = Payment.objects.create(
