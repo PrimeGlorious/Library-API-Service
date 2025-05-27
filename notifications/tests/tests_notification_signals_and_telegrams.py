@@ -12,8 +12,22 @@ User = get_user_model()
 
 
 class NotificationTasksTests(TestCase):
+    """Test suite for notification tasks functionality.
+    
+    This test suite covers:
+    - Telegram message sending functionality
+    - Integration with Telegram bot
+    """
+
     @patch("notifications.tasks.bot.send_message")
     def test_send_telegram_message(self, mock_send_message):
+        """Test that telegram message is sent with correct parameters.
+        
+        Verifies:
+        - Message is sent to correct chat ID
+        - Message text is passed correctly
+        - Bot's send_message method is called exactly once
+        """
         chat_id = 123456
         text = "Test message"
 
@@ -25,8 +39,22 @@ class NotificationTasksTests(TestCase):
 
 
 class NotificationSignalsTests(TestCase):
-    def setUp(self):
+    """Test suite for notification signals functionality.
+    
+    This test suite covers:
+    - Borrowing creation notifications
+    - Book creation notifications
+    - Book update notifications
+    - Integration with Telegram messaging
+    """
 
+    def setUp(self):
+        """Set up test data for notification signal tests.
+        
+        Creates:
+        - Test user with chat_id for Telegram notifications
+        - Test book for borrowing and update tests
+        """
         self.user = User.objects.create_user(
             email="test@example.com",
             password="testpass123",
@@ -43,6 +71,13 @@ class NotificationSignalsTests(TestCase):
 
     @patch("notifications.signals.send_telegram_message.delay")
     def test_borrowing_created_signal(self, mock_send_message):
+        """Test that borrowing creation triggers appropriate notifications.
+        
+        Verifies:
+        - Correct number of notifications are sent
+        - Notifications are sent to correct user
+        - Book title is included in notification messages
+        """
         # Create a borrowing
         borrowing = Borrowing.objects.create(
             user=self.user,
@@ -62,7 +97,13 @@ class NotificationSignalsTests(TestCase):
 
     @patch("notifications.signals.send_telegram_message.delay")
     def test_book_created_signal(self, mock_send_message):
-
+        """Test that book creation triggers appropriate notifications.
+        
+        Verifies:
+        - Correct number of notifications are sent
+        - Notifications are sent to correct user
+        - New book title is included in notification messages
+        """
         new_book = Book.objects.create(
             title="New Book",
             author="New Author",
@@ -81,7 +122,13 @@ class NotificationSignalsTests(TestCase):
 
     @patch("notifications.signals.send_telegram_message.delay")
     def test_book_updated_signal(self, mock_send_message):
-
+        """Test that book updates trigger appropriate notifications.
+        
+        Verifies:
+        - Correct number of notifications are sent
+        - Notifications are sent to correct user
+        - Updated book title is included in notification messages
+        """
         self.book.title = "Updated Book"
         self.book.save()
 

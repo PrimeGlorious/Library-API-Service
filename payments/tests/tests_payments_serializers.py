@@ -12,7 +12,10 @@ User = get_user_model()
 
 
 class PaymentSerializerTest(TestCase):
+    """Test suite for Payment serializers."""
+
     def setUp(self):
+        """Set up test data for payment serializer tests."""
         self.user = User.objects.create_user(
             email="test@example.com",
             password="testpass123",
@@ -40,6 +43,7 @@ class PaymentSerializerTest(TestCase):
         )
 
     def test_payment_serializer(self):
+        """Test PaymentSerializer correctly serializes payment data."""
         serializer = PaymentSerializer(self.payment)
         data = serializer.data
         self.assertEqual(data["status"], Payment.Status.PENDING)
@@ -50,6 +54,7 @@ class PaymentSerializerTest(TestCase):
         self.assertEqual(data["money_to_pay"], "70.00")
 
     def test_payment_nested_serializer(self):
+        """Test PaymentNestedSerializer correctly serializes payment data without borrowing details."""
         serializer = PaymentNestedSerializer(self.payment)
         data = serializer.data
         self.assertEqual(data["status"], Payment.Status.PENDING)
@@ -58,8 +63,10 @@ class PaymentSerializerTest(TestCase):
         self.assertEqual(data["money_to_pay"], "70.00")
 
     def test_payment_serializer_read_only_fields(self):
+        """Test that all specified fields are read-only in PaymentSerializer."""
         serializer = PaymentSerializer(self.payment)
         data = serializer.data
+        # Check all fields that should be read-only
         self.assertIn("session_url", serializer.Meta.read_only_fields)
         self.assertIn("session_id", serializer.Meta.read_only_fields)
         self.assertIn("money_to_pay", serializer.Meta.read_only_fields)

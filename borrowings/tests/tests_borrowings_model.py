@@ -11,7 +11,10 @@ User = get_user_model()
 
 
 class BorrowingModelTest(TestCase):
+    """Test suite for Borrowing model functionality and validation."""
+
     def setUp(self):
+        """Set up test data for borrowing model tests."""
         # Create test user
         self.user = User.objects.create_user(
             email="test@example.com", password="testpass123"
@@ -34,18 +37,18 @@ class BorrowingModelTest(TestCase):
         )
 
     def test_borrowing_creation(self):
-        """Test that a borrowing can be created with valid data"""
+        """Test that a borrowing can be created with valid data."""
         self.assertEqual(self.borrowing.book, self.book)
         self.assertEqual(self.borrowing.user, self.user)
         self.assertEqual(self.borrowing.is_paid, False)
         self.assertIsNone(self.borrowing.actual_return_date)
 
     def test_borrowing_str_representation(self):
-        """Test the string representation of a borrowing"""
+        """Test the string representation of a borrowing."""
         self.assertEqual(str(self.borrowing), self.book.title)
 
     def test_is_active_method(self):
-        """Test the is_active method"""
+        """Test the is_active method for both active and inactive borrowings."""
         # Test active borrowing
         self.assertEqual(self.borrowing.is_active(), "true")
 
@@ -55,7 +58,7 @@ class BorrowingModelTest(TestCase):
         self.assertEqual(self.borrowing.is_active(), "false")
 
     def test_validation_expected_return_date(self):
-        """Test validation of expected return date"""
+        """Test validation of expected return date with various scenarios."""
         # Test with past date
         with self.assertRaises(ValidationError) as context:
             Borrowing.objects.create(
@@ -81,7 +84,7 @@ class BorrowingModelTest(TestCase):
         )
 
     def test_borrowing_relationships(self):
-        """Test relationships between Borrowing and related models"""
+        """Test relationships between Borrowing and related models (Book and User)."""
         # Test book relationship
         self.assertEqual(self.borrowing.book.borrowings.first(), self.borrowing)
 
@@ -89,13 +92,13 @@ class BorrowingModelTest(TestCase):
         self.assertEqual(self.borrowing.user.borrowings.first(), self.borrowing)
 
     def test_borrowing_default_values(self):
-        """Test default values for borrowing fields"""
+        """Test default values for borrowing fields on creation."""
         self.assertFalse(self.borrowing.is_paid)
         self.assertIsNone(self.borrowing.actual_return_date)
         self.assertEqual(self.borrowing.borrow_date, timezone.now().date())
 
     def test_borrowing_update(self):
-        """Test updating borrowing fields"""
+        """Test updating borrowing fields after creation."""
         # Update actual return date
         return_date = timezone.now().date()
         self.borrowing.actual_return_date = return_date

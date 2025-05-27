@@ -19,7 +19,11 @@ User = get_user_model()
 
 
 class BorrowingSerializerTest(TestCase):
+    """Test suite for Borrowing serializers validation and serialization."""
+
     def setUp(self):
+        """Set up test data and request context for serializer tests."""
+        # Initialize API request factory and create test request
         self.factory = APIRequestFactory()
         self.request = self.factory.get("/")
 
@@ -45,7 +49,7 @@ class BorrowingSerializerTest(TestCase):
         )
 
     def test_borrowing_serializer_fields(self):
-        """Test BorrowingSerializer fields"""
+        """Test that BorrowingSerializer includes all required fields and correctly serializes data."""
         serializer = BorrowingSerializer(
             self.borrowing, context={"request": self.request}
         )
@@ -61,7 +65,8 @@ class BorrowingSerializerTest(TestCase):
         )
 
     def test_borrowing_serializer_create_with_no_inventory(self):
-        """Test BorrowingSerializer create with no inventory"""
+        """Test that BorrowingSerializer prevents creation when book has no inventory."""
+        # Set book inventory to 0
         self.book.inventory = 0
         self.book.save()
 
@@ -83,7 +88,7 @@ class BorrowingSerializerTest(TestCase):
         self.assertIn("This book is currently not available", str(context.exception))
 
     def test_borrowing_serializer_create_without_request(self):
-        """Test BorrowingSerializer create without request context"""
+        """Test that BorrowingSerializer requires request context for payment creation."""
         serializer = BorrowingSerializer(
             data={
                 "book": self.book.id,
@@ -102,7 +107,7 @@ class BorrowingSerializerTest(TestCase):
         )
 
     def test_borrowing_list_serializer(self):
-        """Test BorrowingListSerializer"""
+        """Test that BorrowingListSerializer includes all required fields for list view."""
         serializer = BorrowingListSerializer(self.borrowing)
         data = serializer.data
 
@@ -119,7 +124,7 @@ class BorrowingSerializerTest(TestCase):
         self.assertEqual(data["book_title"], self.book.title)
 
     def test_borrowing_detail_serializer(self):
-        """Test BorrowingDetailSerializer"""
+        """Test that BorrowingDetailSerializer includes all required fields and nested book data."""
         serializer = BorrowingDetailSerializer(self.borrowing)
         data = serializer.data
 
@@ -131,7 +136,7 @@ class BorrowingSerializerTest(TestCase):
         self.assertEqual(data["book"]["title"], self.book.title)
 
     def test_borrowing_empty_serializer(self):
-        """Test BorrowingEmptySerializer"""
+        """Test that BorrowingEmptySerializer returns an empty dictionary."""
         serializer = BorrowingEmptySerializer(self.borrowing)
         data = serializer.data
 
