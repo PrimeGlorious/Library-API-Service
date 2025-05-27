@@ -24,7 +24,6 @@ class BorrowingsViewSet(
     mixins.RetrieveModelMixin,
     GenericViewSet,
 ):
-    queryset = Borrowing.objects.filter(is_paid=True).order_by("-borrow_date")
     permission_classes = (IsAuthenticated,)
 
     filter_backends = [DjangoFilterBackend, OrderingFilter]
@@ -43,13 +42,13 @@ class BorrowingsViewSet(
 
     def get_queryset(self):
         if self.request.user.is_superuser:
-            queryset = self.queryset
+            queryset = Borrowing.objects.filter(is_paid=True).order_by("-borrow_date")
 
             is_user = self.request.query_params.get("is_user", None)
             if is_user:
                 queryset = queryset.filter(user=self.request.user)
         else:
-            queryset = self.queryset.filter(
+            queryset = Borrowing.objects.filter(is_paid=True).order_by("-borrow_date").filter(
                 user=self.request.user,
             )
 
