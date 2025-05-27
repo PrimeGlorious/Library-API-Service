@@ -74,4 +74,4 @@ class UserModelTest(TestCase):
         user.is_verified = True
         user.save()
         user.refresh_from_db()
-        self.assertTrue(user.is_verified) 
+        self.assertTrue(user.is_verified)

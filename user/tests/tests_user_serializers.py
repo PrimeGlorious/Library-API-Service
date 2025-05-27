@@ -94,4 +94,4 @@ class ResendVerificationSerializerTest(TestCase):
         self.user.save()
         serializer = ResendVerificationSerializer(data={"email": "test@example.com"})
         self.assertFalse(serializer.is_valid())
-        self.assertIn("email", serializer.errors) 
+        self.assertIn("email", serializer.errors)
