@@ -5,10 +5,8 @@ from django.urls import reverse
 from drf_yasg import openapi
 from drf_yasg.utils import swagger_auto_schema
 from rest_framework import generics, status, response
-from rest_framework.authentication import SessionAuthentication
 from rest_framework.generics import GenericAPIView
 from rest_framework.permissions import IsAuthenticated, AllowAny
-from rest_framework_simplejwt.tokens import RefreshToken
 from django.conf import settings
 import time
 
@@ -110,7 +108,7 @@ class VerifyEmail(GenericAPIView):
             payload = jwt.decode(
                 token, settings.SECRET_KEY, algorithms=["HS256"]
             )
-            user = get_user_model().objects.get(id=payload["user_id"])
+            user = User.objects.get(id=payload["user_id"])
             if not user.is_verified:
                 user.is_verified = True
                 user.save()
@@ -141,7 +139,7 @@ class ResendVerificationEmail(GenericAPIView):
             )
 
         try:
-            user = get_user_model().objects.get(email=email)
+            user = User.objects.get(email=email)
             if user.is_verified:
                 return response.Response(
                     {"message": "User is already verified"},
@@ -155,7 +153,7 @@ class ResendVerificationEmail(GenericAPIView):
                 status=status.HTTP_200_OK,
             )
 
-        except get_user_model().DoesNotExist:
+        except User.DoesNotExist:
             return response.Response(
                 {"error": "User with this email does not exist"},
                 status=status.HTTP_404_NOT_FOUND,
