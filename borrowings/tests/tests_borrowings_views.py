@@ -14,7 +14,25 @@ User = get_user_model()
 
 
 class BorrowingsViewSetTest(TestCase):
+    """Test suite for BorrowingViewSet CRUD operations and custom actions.
+    
+    This test suite covers:
+    - Authorization checks for borrowing operations
+    - CRUD operations for borrowings
+    - Book return functionality
+    - Filtering borrowings by active status
+    - Integration with Stripe payment system
+    """
+
     def setUp(self):
+        """Set up test data including users, book, and borrowing instance.
+        
+        Creates:
+        - Regular user for testing normal operations
+        - Admin user for testing admin-specific operations
+        - Test book with initial inventory
+        - Test borrowing instance for the regular user
+        """
         self.client = APIClient()
 
         # Create regular user

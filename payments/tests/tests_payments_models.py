@@ -11,7 +11,10 @@ User = get_user_model()
 
 
 class PaymentModelTest(TestCase):
+    """Test suite for Payment model."""
+
     def setUp(self):
+        """Set up test data for payment model tests."""
         self.user = User.objects.create_user(
             email="test@example.com",
             password="testpass123",
@@ -39,6 +42,7 @@ class PaymentModelTest(TestCase):
         )
 
     def test_payment_creation(self):
+        """Test payment object creation with all required fields."""
         self.assertEqual(self.payment.status, Payment.Status.PENDING)
         self.assertEqual(self.payment.type, Payment.Type.PAYMENT)
         self.assertEqual(self.payment.borrowing, self.borrowing)
@@ -47,13 +51,16 @@ class PaymentModelTest(TestCase):
         self.assertEqual(self.payment.money_to_pay, 70.00)
 
     def test_payment_str(self):
+        """Test payment string representation format."""
         expected_str = f"{self.payment.type}, user: {self.borrowing.user.id}, book: {self.borrowing.book.title}"
         self.assertEqual(str(self.payment), expected_str)
 
     def test_payment_status_choices(self):
+        """Test that payment status is one of the valid choices."""
         self.assertIn(
             self.payment.status, [status[0] for status in Payment.Status.choices]
         )
 
     def test_payment_type_choices(self):
+        """Test that payment type is one of the valid choices."""
         self.assertIn(self.payment.type, [type[0] for type in Payment.Type.choices])

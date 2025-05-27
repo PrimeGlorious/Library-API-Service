@@ -12,11 +12,31 @@ User = get_user_model()
 
 
 class MockRequest:
+    """Mock request class for testing admin functionality."""
     pass
 
 
 class BorrowingAdminTest(TestCase):
+    """Test suite for BorrowingAdmin configuration and functionality.
+    
+    This test suite covers:
+    - Admin list display configuration
+    - Filter and search field setup
+    - Ordering configuration
+    - String representation in admin interface
+    - Active status display
+    """
+
     def setUp(self):
+        """Set up test environment with admin site and test data.
+        
+        Creates:
+        - Admin site instance
+        - BorrowingAdmin instance
+        - Test user
+        - Test book
+        - Test borrowing instance
+        """
         self.site = AdminSite()
         self.admin = BorrowingAdmin(Borrowing, self.site)
 
@@ -39,7 +59,7 @@ class BorrowingAdminTest(TestCase):
         )
 
     def test_list_display(self):
-        """Test that list_display contains all required fields"""
+        """Test that list_display contains all required fields for the admin list view."""
         self.assertEqual(
             self.admin.list_display,
             (
@@ -53,7 +73,7 @@ class BorrowingAdminTest(TestCase):
         )
 
     def test_list_filter(self):
-        """Test that list_filter contains all required fields"""
+        """Test that list_filter contains all required fields for filtering in admin."""
         self.assertEqual(
             self.admin.list_filter,
             (
@@ -65,21 +85,23 @@ class BorrowingAdminTest(TestCase):
         )
 
     def test_search_fields(self):
-        """Test that search_fields contains all required fields"""
+        """Test that search_fields contains all required fields for admin search functionality."""
         self.assertEqual(self.admin.search_fields, ("book__title", "user__email"))
 
     def test_ordering(self):
-        """Test that ordering is set correctly"""
+        """Test that ordering is set correctly for the admin list view."""
         self.assertEqual(self.admin.ordering, ("-borrow_date",))
 
     def test_admin_str_representation(self):
-        """Test the string representation in admin"""
+        """Test the string representation of borrowing in admin interface."""
         self.assertEqual(str(self.borrowing), self.book.title)
 
     def test_is_active_method(self):
-        """Test the is_active method"""
+        """Test the is_active method for both active and inactive borrowings in admin."""
+        # Test active borrowing
         self.assertEqual(self.borrowing.is_active(), "true")
 
+        # Test inactive borrowing
         self.borrowing.actual_return_date = timezone.now().date()
         self.borrowing.save()
         self.assertEqual(self.borrowing.is_active(), "false")

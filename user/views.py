@@ -1,5 +1,4 @@
 import jwt
-from datetime import timedelta, datetime
 from django.contrib.auth import get_user_model
 from django.contrib.sites.shortcuts import get_current_site
 from django.urls import reverse
@@ -24,6 +23,7 @@ from user.permissions import IsValidateOrDontHaveAccess
 
 User = get_user_model()
 
+
 class ManageUserView(generics.RetrieveUpdateAPIView):
     serializer_class = UserSerializer
     permission_classes = (IsValidateOrDontHaveAccess, IsAuthenticated)
@@ -45,9 +45,11 @@ def create_confirm_mail_with_token(user, request):
     # send email for user verification
     current_site = get_current_site(request).domain
     relative_link = reverse("user:email-verify")
-    absurl = "http://" + current_site + relative_link + "?token=" + access_token
+    absurl = (
+        "http://" + current_site + relative_link + "?token=" + access_token
+    )
     email_body = (
-            f"Hi {user_email} Use the link below to verify your email \n" + absurl
+        f"Hi {user_email} Use the link below to verify your email \n" + absurl
     )
     data = {
         "email_body": email_body,
@@ -70,7 +72,9 @@ class SignUp(GenericAPIView):
 
         create_confirm_mail_with_token(user, request)
 
-        return response.Response({"user_data": user}, status=status.HTTP_201_CREATED)
+        return response.Response(
+            {"user_data": user}, status=status.HTTP_201_CREATED
+        )
 
 
 class VerifyEmail(GenericAPIView):
@@ -90,7 +94,9 @@ class VerifyEmail(GenericAPIView):
         responses={
             200: openapi.Response(
                 description="Email successfully verified",
-                examples={"application/json": {"email": "Successfully activated"}},
+                examples={
+                    "application/json": {"email": "Successfully activated"}
+                },
             ),
             400: openapi.Response(
                 description="Invalid or expired token",
@@ -101,7 +107,9 @@ class VerifyEmail(GenericAPIView):
     def get(self, request):
         token = request.GET.get("token")
         try:
-            payload = jwt.decode(token, settings.SECRET_KEY, algorithms=["HS256"])
+            payload = jwt.decode(
+                token, settings.SECRET_KEY, algorithms=["HS256"]
+            )
             user = get_user_model().objects.get(id=payload["user_id"])
             if not user.is_verified:
                 user.is_verified = True
@@ -111,7 +119,8 @@ class VerifyEmail(GenericAPIView):
             )
         except jwt.ExpiredSignatureError:
             return response.Response(
-                {"error": "Activation Expired"}, status=status.HTTP_400_BAD_REQUEST
+                {"error": "Activation Expired"},
+                status=status.HTTP_400_BAD_REQUEST,
             )
         except jwt.exceptions.DecodeError:
             return response.Response(
@@ -127,14 +136,16 @@ class ResendVerificationEmail(GenericAPIView):
         email = request.data.get("email")
         if not email:
             return response.Response(
-                {"error": "Email is required"}, status=status.HTTP_400_BAD_REQUEST
+                {"error": "Email is required"},
+                status=status.HTTP_400_BAD_REQUEST,
             )
 
         try:
             user = get_user_model().objects.get(email=email)
             if user.is_verified:
                 return response.Response(
-                    {"message": "User is already verified"}, status=status.HTTP_200_OK
+                    {"message": "User is already verified"},
+                    status=status.HTTP_200_OK,
                 )
 
             create_confirm_mail_with_token(user, request)
