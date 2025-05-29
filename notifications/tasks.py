@@ -1,4 +1,5 @@
 import asyncio
+import logging
 import os
 from datetime import datetime, timedelta
 
@@ -10,6 +11,8 @@ from django.utils import timezone
 from borrowings.models import Borrowing
 
 load_dotenv()
+
+logger = logging.getLogger(__name__)
 
 bot = Bot(token=os.getenv("TELEGRAM_BOT_TOKEN"))
 
@@ -29,7 +32,7 @@ def send_telegram_message(chat_id: int, text: str):
             asyncio.set_event_loop(loop)
         loop.run_until_complete(send())
     except Exception as e:
-        print(f"Failed to send telegram message: {e}")
+        logger.exception(f"Failed to send telegram message to chat_id={chat_id}")
         raise
 
 
